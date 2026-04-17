@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import userRouter from "./routes/user.routes.js";
 
 const app = express();
 
@@ -21,6 +22,8 @@ app.get('/', (req, res) => {
 // ── Routes ──────────────────────────────────────────────
 // (You will add these as you build each feature)
 // app.use('/api/v1/users', require('./routes/authRoutes'));
+app.use("/api/v1/users", userRouter);
+
 
 // ── 404 Handler ─────────────────────────────────────────
 app.use((req, res) => {
