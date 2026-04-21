@@ -46,8 +46,9 @@ export const sendOTP = asyncHandler(async (req, res) => {
     expiresAt,
   });
 
-  // 🔹 7. Send OTP (console for now)
-  console.log(`OTP for ${normalizedPhone}: ${otp}`);
+  if (process.env.NODE_ENV === "development" || testUser) {
+    console.log(`OTP for ${normalizedPhone}: ${otp}`);
+  }
 
   // 🔹 8. Response
   return res
