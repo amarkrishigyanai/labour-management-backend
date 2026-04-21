@@ -109,13 +109,12 @@ export const verfiyOTP = asyncHandler(async (req, res) => {
     user = await User.create({
       phone: normalizedPhone,
       isVerified: true,
-      role: testUser ? testUser.role : null,
+      role: null, // ✅ always null
     });
   } else {
     user.isVerified = true;
     await user.save();
   }
-
   // 🔹 7. Generate token
   const token = generateToken(user._id);
 
@@ -138,6 +137,56 @@ export const verfiyOTP = asyncHandler(async (req, res) => {
         status,
       },
       "OTP verified successfully",
+    ),
+  );
+});
+
+//select role
+
+export const setRole = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const { role } = req.body;
+
+  // 🔹 1. Validate role
+  const allowedRoles = ["WORKER", "EMPLOYER"];
+
+  if (!role || !allowedRoles.includes(role)) {
+    throw new ApiError(400, "Invalid role selected");
+  }
+
+  // 🔹 2. Find user
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // 🔹 3. Ensure OTP verification completed
+  if (!user.isVerified) {
+    throw new ApiError(401, "Verify OTP first");
+  }
+
+  // 🔥 4. Prevent role overwrite (CRITICAL)
+  if (user.role) {
+    throw new ApiError(400, "Role already set and cannot be changed");
+  }
+
+  // 🔹 5. Set role
+  user.role = role;
+  await user.save();
+
+  // 🔹 6. Decide next step
+  let status = "CREATE_PROFILE";
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        _id: user._id,
+        role: user.role,
+        status,
+      },
+      "Role set successfully",
     ),
   );
 });
