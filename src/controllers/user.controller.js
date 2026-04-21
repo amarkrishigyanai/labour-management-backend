@@ -33,8 +33,7 @@ export const sendOTP = asyncHandler(async (req, res) => {
 
   // 🔹 4. Generate OTP
   // const otp = generateOTP();
-  const isDev = process.env.NODE_ENV === "development";
-  const testUser = isDev ? TEST_USERS[normalizedPhone] : null;
+  const testUser = TEST_USERS[normalizedPhone] || null;
   const otp = testUser ? testUser.otp : generateOTP();
 
   // 🔹 5. Expiry (5 min)
@@ -85,8 +84,7 @@ export const verfiyOTP = asyncHandler(async (req, res) => {
   // if (otpRecord.otp !== otp) {
   //   throw new ApiError(400, "Invalid OTP");
   // }
-  const isDev = process.env.NODE_ENV === "development";
-  const testUser = isDev ? TEST_USERS[String(normalizedPhone)] : null;
+  const testUser = TEST_USERS[String(normalizedPhone)] || null;
   console.log("Normalized Phone:", normalizedPhone);
   console.log("Test User:", testUser);
   console.log("Assigned Role:", testUser?.role);

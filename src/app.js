@@ -12,8 +12,8 @@ const app = express();
 // ── Middleware ──────────────────────────────────────────
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN,
-    credentials: true,
+    origin: process.env.CORS_ORIGIN === "*" ? "*" : process.env.CORS_ORIGIN,
+    credentials: process.env.CORS_ORIGIN !== "*",
   }),
 );
 app.use(cookieParser());
