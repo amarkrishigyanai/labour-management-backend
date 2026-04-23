@@ -21,19 +21,19 @@ const jobSchema = new mongoose.Schema(
     },
 
     workerType: {
-  type: [String],
-  enum: [
-    "PLUMBER",
-    "ELECTRICIAN",
-    "MASON",
-    "CARPENTER",
-    "PAINTER",
-    "HELPER",
-    "GENERAL",
-  ],
-  required: true,
-  index: true,
-},
+      type: [String],
+      enum: [
+        "PLUMBER",
+        "ELECTRICIAN",
+        "MASON",
+        "CARPENTER",
+        "PAINTER",
+        "HELPER",
+        "GENERAL",
+      ],
+      required: true,
+      index: true,
+    },
     location: {
       city: { type: String, trim: true },
       state: { type: String, trim: true, index: true },
@@ -50,6 +50,10 @@ const jobSchema = new mongoose.Schema(
       required: true,
       min: 1,
     },
+    hiredWorkersCount: {
+      type: Number,
+      default: 0,
+    },
 
     startDate: {
       type: Date,
@@ -65,7 +69,7 @@ const jobSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export const Job = mongoose.model("Job", jobSchema);

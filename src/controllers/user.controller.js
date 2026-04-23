@@ -59,7 +59,7 @@ export const sendOTP = asyncHandler(async (req, res) => {
 // --------------------------------------------
 
 //verify OTP and login/register user
-export const verfiyOTP = asyncHandler(async (req, res) => {
+export const verifyOTP = asyncHandler(async (req, res) => {
   const { phone, otp } = req.body;
 
   if (!phone || !otp) {

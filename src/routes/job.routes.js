@@ -9,6 +9,7 @@ import {
   applyJob,
   getAppliedJobs,
   getApplicants,
+  hireWorker,
 } from "../controllers/job.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { allowRoles } from "../middlewares/role.middleware.js";
@@ -39,6 +40,12 @@ router.get("/", verifyJWT, allowRoles("WORKER"), getJobs);
 router.post("/", verifyJWT, allowRoles("EMPLOYER"), createJob);
 router.patch("/:id/status", verifyJWT, allowRoles("EMPLOYER"), toggleJobStatus);
 router.patch("/:id", verifyJWT, allowRoles("EMPLOYER"), updateJob);
+router.patch(
+  "/:jobId/hire/:applicationId",
+  verifyJWT,
+  allowRoles("EMPLOYER"),
+  hireWorker,
+);
 router.delete("/:id", verifyJWT, allowRoles("EMPLOYER"), deleteJob);
 
 export default router;

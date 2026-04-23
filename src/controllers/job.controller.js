@@ -320,26 +320,109 @@ export const getApplicants = asyncHandler(async (req, res) => {
 
   // 🔥 Attach worker profile manually
   const result = await Promise.all(
-  applications.map(async (app) => {
-    const profile = await WorkerProfile.findOne({
-      user: app.worker._id,
-    }).select("workerType skills experienceYears expectedDailyWage");
+    applications.map(async (app) => {
+      const profile = await WorkerProfile.findOne({
+        user: app.worker._id,
+      }).select("workerType skills experienceYears expectedDailyWage");
 
-    return {
-      _id: app._id,
-      status: app.status,
-      createdAt: app.createdAt,
-      worker: {
-        ...app.worker.toObject(),
-        profile: profile || null,
-      },
-    };
-  })
-);
+      return {
+        _id: app._id,
+        status: app.status,
+        createdAt: app.createdAt,
+        worker: {
+          ...app.worker.toObject(),
+          profile: profile || null,
+        },
+      };
+    }),
+  );
 
   return res
     .status(200)
     .json(new ApiResponse(200, result, "Applicants fetched successfully"));
 });
 
+//------------------hire worker ------------
+export const hireWorker = asyncHandler(async (req, res) => {
+  const { jobId, applicationId } = req.params;
+  const userId = req.user._id;
 
+  // 🔹 1. Role check
+  if (req.user.role !== "EMPLOYER") {
+    throw new ApiError(403, "Only employers can hire workers");
+  }
+
+  // 🔹 2. Get job
+  const job = await Job.findById(jobId);
+
+  if (!job) {
+    throw new ApiError(404, "Job not found");
+  }
+
+  // 🔹 3. Ownership check
+  if (job.employer.toString() !== userId.toString()) {
+    throw new ApiError(403, "Not authorized");
+  }
+
+  // 🔹 4. Check job open
+  if (job.status === "CLOSED") {
+    throw new ApiError(400, "Job already closed");
+  }
+
+  // 🔹 5. Get application
+  const application = await JobApplication.findById(applicationId);
+
+  if (!application) {
+    throw new ApiError(404, "Application not found");
+  }
+
+  if (application.job.toString() !== jobId) {
+    throw new ApiError(400, "Invalid application");
+  }
+
+  // 🔹 6. Prevent double hiring
+  if (application.status === "HIRED") {
+    throw new ApiError(400, "Worker already hired");
+  }
+
+  // 🔹 7. Check capacity
+  if (job.hiredWorkersCount >= job.numberOfWorkers) {
+    throw new ApiError(400, "All positions already filled");
+  }
+
+  // 🔹 8. Hire worker
+  application.status = "HIRED";
+  await application.save();
+
+  // 🔹 9. Increment count
+  job.hiredWorkersCount += 1;
+
+  // 🔹 10. If filled → close job & reject others
+  if (job.hiredWorkersCount === job.numberOfWorkers) {
+    job.status = "CLOSED";
+
+    await JobApplication.updateMany(
+      {
+        job: jobId,
+        status: { $ne: "HIRED" },
+      },
+      {
+        $set: { status: "REJECTED" },
+      },
+    );
+  }
+
+  await job.save();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        hiredCount: job.hiredWorkersCount,
+        required: job.numberOfWorkers,
+        jobStatus: job.status,
+      },
+      "Worker hired successfully",
+    ),
+  );
+});
