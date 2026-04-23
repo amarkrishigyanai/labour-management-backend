@@ -18,7 +18,8 @@ export const createJob = asyncHandler(async (req, res) => {
     description,
     workerType,
     location,
-    wage,
+    salary,
+    facilities,
     numberOfWorkers,
     startDate,
   } = req.body;
@@ -28,7 +29,8 @@ export const createJob = asyncHandler(async (req, res) => {
     !title ||
     !description ||
     !workerType ||
-    !wage ||
+    !salary?.amount ||
+    !salary?.type ||
     !numberOfWorkers ||
     !startDate
   ) {
@@ -41,7 +43,8 @@ export const createJob = asyncHandler(async (req, res) => {
     description,
     workerType,
     location,
-    wage,
+    salary,
+    facilities,
     numberOfWorkers,
     startDate,
   });
@@ -88,7 +91,8 @@ export const updateJob = asyncHandler(async (req, res) => {
     description,
     workerType,
     location,
-    wage,
+    salary,
+    facilities,
     numberOfWorkers,
     startDate,
     status,
@@ -99,7 +103,8 @@ export const updateJob = asyncHandler(async (req, res) => {
   if (description) job.description = description;
   if (workerType) job.workerType = workerType;
   if (location) job.location = location;
-  if (wage !== undefined) job.wage = wage;
+  if (salary) job.salary = salary;
+  if (facilities) job.facilities = facilities;
   if (numberOfWorkers) job.numberOfWorkers = numberOfWorkers;
   if (startDate) job.startDate = startDate;
   if (status) job.status = status;
@@ -190,16 +195,16 @@ export const getJobs = asyncHandler(async (req, res) => {
   if (state) query["location.state"] = state;
   if (city) query["location.city"] = city;
 
-  // 🔹 Wage filter
+  // 🔹 Salary filter
   if (minWage || maxWage) {
-    query.wage = {
+    query["salary.amount"] = {
       ...(minWage && { $gte: Number(minWage) }),
       ...(maxWage && { $lte: Number(maxWage) }),
     };
   }
 
   const jobs = await Job.find(query)
-    .select("title wage location workerType createdAt employer")
+    .select("title salary facilities location workerType createdAt employer")
     .populate("employer", "name phone")
     .sort({ createdAt: -1 })
     .skip(skip)
@@ -282,7 +287,7 @@ export const getAppliedJobs = asyncHandler(async (req, res) => {
   const applications = await JobApplication.find({ worker: userId })
     .populate({
       path: "job",
-      select: "title wage location status employer createdAt",
+      select: "title salary facilities location status employer createdAt",
       populate: {
         path: "employer",
         select: "name phone",
@@ -423,6 +428,63 @@ export const hireWorker = asyncHandler(async (req, res) => {
         jobStatus: job.status,
       },
       "Worker hired successfully",
+    ),
+  );
+});
+
+//------complete job----------------
+export const completeJob = asyncHandler(async (req, res) => {
+  const { jobId } = req.params;
+  const userId = req.user._id;
+
+  // 🔹 1. Find job
+  const job = await Job.findById(jobId);
+  if (!job) throw new ApiError(404, "Job not found");
+
+  // 🔹 2. Authorization
+  if (job.employer.toString() !== userId.toString()) {
+    throw new ApiError(403, "Not authorized");
+  }
+
+  // 🔹 3. Prevent duplicate completion
+  if (job.status === "COMPLETED") {
+    throw new ApiError(400, "Job already completed");
+  }
+
+  // 🔹 4. Get hired workers (SOURCE OF TRUTH)
+  const hiredApplications = await JobApplication.find({
+    job: jobId,
+    status: "HIRED",
+  });
+
+  const hiredCount = hiredApplications.length;
+
+  // ✅ Allow partial fulfillment
+  if (hiredCount === 0) {
+    throw new ApiError(400, "At least one hired worker is required");
+  }
+
+  // 🔹 5. Mark job completed
+  job.status = "COMPLETED";
+  await job.save();
+
+  // 🔹 6. Update hired workers → COMPLETED
+  await JobApplication.updateMany(
+    { job: jobId, status: "HIRED" },
+    { $set: { status: "COMPLETED" } },
+  );
+
+  // 🔹 7. Response
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        jobId: job._id,
+        requiredWorkers: job.numberOfWorkers,
+        hiredWorkers: hiredCount,
+        status: job.status,
+      },
+      "Job completed successfully",
     ),
   );
 });

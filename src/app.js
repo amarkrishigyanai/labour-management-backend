@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import userRouter from "./routes/user.routes.js";
 import workerRouter from "./routes/worker.routes.js";
 import employerRouter from "./routes/Employer.routes.js";
+import reviewRoutes from "./routes/review.routes.js";
 
 import jobRouter from "./routes/job.routes.js";
 
@@ -36,11 +37,11 @@ app.use("/api/v1/worker", workerRouter);
 //Employeer routes
 app.use("/api/v1/employer", employerRouter);
 
-
 //Job routes
 app.use("/api/v1/jobs", jobRouter);
 
-
+//review routes
+app.use("/api/v1/reviews", reviewRoutes);
 
 // ── 404 Handler ─────────────────────────────────────────
 app.use((req, res) => {

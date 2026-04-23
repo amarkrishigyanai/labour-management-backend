@@ -39,10 +39,21 @@ const jobSchema = new mongoose.Schema(
       state: { type: String, trim: true, index: true },
     },
 
-    wage: {
-      type: Number,
-      required: true,
-      min: 0,
+    salary: {
+      amount: { type: Number, required: true, min: 0 },
+      type: {
+        type: String,
+        enum: ["DAILY", "WEEKLY", "MONTHLY", "PER_PROJECT"],
+        required: true,
+      },
+    },
+
+    facilities: {
+      accommodation: { type: Boolean, default: false },
+      food: { type: Boolean, default: false },
+      tools: { type: Boolean, default: false },
+      equipment: { type: Boolean, default: false },
+      travelAllowance: { type: Boolean, default: false },
     },
 
     numberOfWorkers: {
@@ -62,7 +73,7 @@ const jobSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["OPEN", "CLOSED"],
+      enum: ["OPEN", "CLOSED", "COMPLETED"],
       default: "OPEN",
       index: true,
     },

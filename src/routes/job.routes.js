@@ -10,6 +10,7 @@ import {
   getAppliedJobs,
   getApplicants,
   hireWorker,
+  completeJob,
 } from "../controllers/job.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { allowRoles } from "../middlewares/role.middleware.js";
@@ -45,6 +46,13 @@ router.patch(
   verifyJWT,
   allowRoles("EMPLOYER"),
   hireWorker,
+);
+//complete job
+router.patch(
+  "/:jobId/complete",
+  verifyJWT,
+  allowRoles("EMPLOYER"),
+  completeJob,
 );
 router.delete("/:id", verifyJWT, allowRoles("EMPLOYER"), deleteJob);
 
