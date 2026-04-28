@@ -5,10 +5,21 @@ import userRouter from "./routes/user.routes.js";
 import workerRouter from "./routes/worker.routes.js";
 import employerRouter from "./routes/Employer.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
-
 import jobRouter from "./routes/job.routes.js";
 
+import swaggerUi from "swagger-ui-express";
+import swaggerAutogen from "swagger-autogen";
+
+import fs from "fs";
 const app = express();
+
+const swaggerDocument = JSON.parse(
+  fs.readFileSync(new URL("./swagger.json", import.meta.url)),
+);
+
+const router = express.Router();
+app.use(router);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // ── Middleware ──────────────────────────────────────────
 app.use(
